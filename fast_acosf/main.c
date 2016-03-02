@@ -290,8 +290,10 @@ dump_table_summary(void)
     printf("i [%d] from float [%f]\n", index_from_float(f), f); 
 }
 #endif /* TEST */
+
+
 int
-main()
+main(void)
 {
     int ret;
     debug_print();
