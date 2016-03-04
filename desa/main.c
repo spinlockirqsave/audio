@@ -1,11 +1,14 @@
 /*
- * desa.c
- *
- * Tone detection using the Teager Kaiser Energy Operator to
- * measure frequency (Desa-1 and Desa-2 algorithms)
- * (DESA = Discrete Energy Separation Algorithm)
+ * @file    main.c
+ * @date    26 Feb 2016
+ * @brief   Tone detection using the Teager Kaiser Energy Operator to
+ *          measure frequency (Desa-1 and Desa-2 algorithms)
+ *          (DESA = Discrete Energy Separation Algorithm).
  *
  * Copyright 2011 Shawn Stevenson
+ *
+ * Modifications:   Piotr Gregor <piotrek . gregor at gmail.com>
+ *
  */
  
 #include <stdio.h>
