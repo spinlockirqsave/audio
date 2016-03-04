@@ -13,7 +13,7 @@
 #include <memory.h>
 #include <math.h>
  
-#define BLOCK   40          // samples processed each invocation
+#define BLOCK   160          // samples processed each invocation
 #define SAMPLE_RATE 8000.0  // sample rate of input signal
  
 /*
@@ -167,7 +167,7 @@ int main( int argc, char *argv[] )
     double frequency;
     double variance;
     int numWords;
-    int sampleCount;
+    int sampleCount, i;
     char *inFileName;
     FILE *inFile;
  
@@ -201,15 +201,19 @@ int main( int argc, char *argv[] )
     while( numWords == BLOCK )
     {
         intToFloat( intData, inputData, numWords );
-        printf("sample = %d\n",sampleCount);
+        printf("\nsample = %d\n",sampleCount);
+        for (i = 0; i < BLOCK; ++i)
+        {
+            printf("[%d]", intData[i]);
+        }
  
         // get the frequency estimates
         frequency = desa1( inputData, &variance );
-        printf("Desa1: Mean freq = %f, var = %f, std dev = %f\n",
+        printf("\nDesa1: Mean freq = %f, var = %f, std dev = %f",
             frequency, variance, sqrt(variance));
  
         frequency = desa2( inputData, &variance );
-        printf("Desa2: Mean freq = %f, var = %f, std dev = %f\n",
+        printf("\nDesa2: Mean freq = %f, var = %f, std dev = %f\n",
             frequency, variance, sqrt(variance));
  
         sampleCount += BLOCK;
