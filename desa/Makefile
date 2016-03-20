@@ -1,6 +1,6 @@
 CXX			= gcc
 LDFLAGS		= -pthread -lm
-SOURCES		= main.c
+SOURCES		= desa.c
 INCLUDES	= -I.
 OBJECTS		= $(SOURCES:.c=.o)
 TARGET		= desa

@@ -218,7 +218,7 @@ int main( int argc, char *argv[] )
         frequency = desa2( inputData, &variance );
         printf("\nDesa2: Mean freq = %f, var = %f, std dev = %f\n",
             frequency, variance, sqrt(variance));
- 
+
         sampleCount += BLOCK;
         numWords = fread(intData, sizeof(int16_t), BLOCK, inFile );
     }
