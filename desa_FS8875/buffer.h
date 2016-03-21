@@ -75,23 +75,12 @@ extern size_t next_power_of_2(size_t v);
 	if ((b)->backlog > (b)->buf_len) (b)->backlog = (b)->buf_len; \
     }
 
-#define INSERT_DOUBLE_FRAME(b, f, l) \
-    { \
-	for ((b)->i = 0; (b)->i < (l); (b)->i++) { \
-	    SET_SAMPLE((b), ((b)->i + (b)->pos), ((f)[(b)->i])); \
-	} \
-	(b)->pos += (l); \
-	(b)->lpos += (l); \
-	(b)->pos &= (b)->mask; \
-	(b)->backlog += (l); \
-	if ((b)->backlog > (b)->buf_len) (b)->backlog = (b)->buf_len; \
-    }
 
-#define CALC_BUFF_LEN(bl) (next_power_of_2((bl) << 1))
+#define CALC_BUFF_LEN(fl, bl) (((fl) >= (bl))? next_power_of_2((fl) << 1): next_power_of_2((bl) << 1))
 
 #define INIT_CIRC_BUFFER(bf, bl)			\
     { \
-	(bf)->buf_len = CALC_BUFF_LEN(bl); \
+	(bf)->buf_len = (bl); \
 	(bf)->mask = (bf)->buf_len - 1; \
 	(bf)->buf = (BUFF_TYPE *) malloc((bf)->buf_len * sizeof(BUFF_TYPE)); \
 	assert((bf)->buf != NULL); \

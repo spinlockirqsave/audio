@@ -1,7 +1,7 @@
 /*
  * @file    desa3_fs.c
  * @date    20 Mar 2016
- * @brief   DESA implementations.
+ * @brief   DESA implementations tweaked for speed.
  *          (DESA = Discrete Energy Separation Algorithm).
  *
  * @author  Piotr Gregor < piotrek.gregor gmail.com >
@@ -18,7 +18,7 @@
 #include "desa2_fs.h"
  
 #define BLOCK       160         /* samples processed in each invocation */
-#define SAMPLE_RATE 8000.0      /* sample rate of input signal */
+#define TO_HZ(r, f) (((r) * (f)) / (2.0 * M_PI))
  
 /*
  * Purpose: detect a tone using DESA-1 algorithm
@@ -30,7 +30,7 @@
  * Return value: frequency estimate in Hz
  */
 double
-desa1(double *input, double *variance)
+desa1(double *input, double *variance, uint32_t sample_rate)
 {
     // detector variables
     static double diff0 = 0.0;  // delayed differences
@@ -53,7 +53,10 @@ desa1(double *input, double *variance)
         num = diff2 * diff2 - diff1 * diff3
             + diff1 * diff1 - diff0 * diff2;
         den = x2 * x2 - x1 * x3;
-        freq[i] = SAMPLE_RATE * asin(sqrt(num/(8.0 * den))) / M_PI;
+        /* instead of
+         * freq[i] = sample_rate * asin(sqrt(num/(8.0 * den))) / M_PI;
+         * we store only kind of OMEGA */
+        freq[i] = num/den;
         // handle errors - division by zero, square root of
         // negative number or asin of number > 1 or < -1
         if (isnan(freq[i]))
@@ -102,7 +105,7 @@ desa1(double *input, double *variance)
  * Return value: frequency estimate in Hz
  */
 double
-desa2(double *input, double *variance)
+desa2(double *input, double *variance, uint32_t sample_rate)
 {
     // detector variables
     static double diff0 = 0.0;  // delayed differences
@@ -123,8 +126,11 @@ desa2(double *input, double *variance)
         diff0 = input[i] - x2;
         num = diff1 * diff1 - diff0 * diff2;
         den = x2 * x2 - x1 * x3;
-        freq[i] = SAMPLE_RATE * asin(sqrt(num/(4.0 * den)))
-            / (2.0 * M_PI);
+        /* instead of
+         * freq[i] = sample_rate * asin(sqrt(num/(4.0 * den)))
+         * / (2.0 * M_PI);
+         * we store only kind of OMEGA */
+        freq[i] = num/den;
         // handle errors - division by zero, square root of
         // negative number or asin of number > 1 or < -1
         if (isnan(freq[i]))
@@ -177,7 +183,7 @@ desa2(double *input, double *variance)
 /*! Conversion to Hertz */
 #define TO_HZ(r, f) (((r) * (f)) / (2.0 * M_PI))
 void
-desa2_freeswitch_int(int16_t *input, double *mean1, double *mean2, double *var1, double *var2)
+desa2_freeswitch_int(int16_t *input, double *mean1, double *mean2, double *var1, double *var2, uint32_t sample_rate)
 {
     int i;
     circ_buffer_t   b;
@@ -186,20 +192,20 @@ desa2_freeswitch_int(int16_t *input, double *mean1, double *mean2, double *var1,
     double freq[BLOCK]; // frequency estimates
 
     INIT_CIRC_BUFFER(&b, BLOCK);
-	INIT_SMA_BUFFER(&sma_b, 10);
-	INIT_SMA_BUFFER(&sqa_b, 10);
+	INIT_SMA_BUFFER(&sma_b, 160);
+	INIT_SMA_BUFFER(&sqa_b, 160);
 
 	INSERT_INT16_FRAME(&b, input, BLOCK);
 
     // calculate the frequency estimate for each sample as in FS
     for (i = 0; i < (BLOCK - P); i++)
     {
-        freq[i] = desa2_fs(&b, i);
+        freq[i] = desa2_fs_tweaked(&b, i);
         APPEND_SMA_VAL(&sma_b, freq[i]);
         APPEND_SMA_VAL(&sqa_b, freq[i] * freq[i]);
 	*var1 = sqa_b.sma - (sma_b.sma * sma_b.sma);
-	printf("<<< AVMD v[%f] f[%f][%f]Hz sma[%f][%f]Hz sqa[%f]\tsample[%d]\t[%d] >>>\n",
-            *var1, freq[i], TO_HZ(8000, freq[i]), sma_b.sma, TO_HZ(8000, sma_b.sma), sqa_b.sma, i, input[i]);
+/*	printf("<<< AVMD v[%f] f[%f][%f]Hz sma[%f][%f]Hz sqa[%f]\tsample[%d]\t[%d] >>>\n",
+            *var1, freq[i], TO_HZ(sample_rate, freq[i]), sma_b.sma, TO_HZ(sample_rate, sma_b.sma), sqa_b.sma, i, input[i]); */
     }
     /* set mean */
     *mean1 = sma_b.sma;
@@ -227,7 +233,7 @@ desa2_freeswitch_int(int16_t *input, double *mean1, double *mean2, double *var1,
 }
 
 void
-desa2_freeswitch_double(double *input, double *mean1, double *mean2, double *var1, double *var2)
+desa2_freeswitch_double(double *input, double *mean1, double *mean2, double *var1, double *var2, uint32_t sample_rate)
 {
     int i;
     circ_buffer_t   b;
@@ -236,20 +242,20 @@ desa2_freeswitch_double(double *input, double *mean1, double *mean2, double *var
     double freq[BLOCK]; // frequency estimates
 
     INIT_CIRC_BUFFER(&b, BLOCK);
-	INIT_SMA_BUFFER(&sma_b, 10);
-	INIT_SMA_BUFFER(&sqa_b, 10);
+	INIT_SMA_BUFFER(&sma_b, 160);
+	INIT_SMA_BUFFER(&sqa_b, 160);
 
 	INSERT_DOUBLE_FRAME(&b, input, BLOCK);
 
     // calculate the frequency estimate for each sample as in FS
     for (i = 0; i < (BLOCK - P); i++)
     {
-        freq[i] = desa2_fs(&b, i);
+        freq[i] = desa2_fs_tweaked(&b, i);
         APPEND_SMA_VAL(&sma_b, freq[i]);
         APPEND_SMA_VAL(&sqa_b, freq[i] * freq[i]);
 	*var1 = sqa_b.sma - (sma_b.sma * sma_b.sma);
-	printf("<<< AVMD v[%f] f[%f][%f]Hz sma[%f][%f]Hz sqa[%f]\tsample[%d]\t[%f][%f]>>>\n",
-            *var1, freq[i], TO_HZ(8000, freq[i]), sma_b.sma, TO_HZ(8000, sma_b.sma), sqa_b.sma, i, input[i], GET_SAMPLE((&b), i));
+/*	printf("<<< AVMD v[%f] f[%f][%f]Hz sma[%f][%f]Hz sqa[%f]\tsample[%d]\t[%f][%f]>>>\n",
+            *var1, freq[i], TO_HZ(sample_rate, freq[i]), sma_b.sma, TO_HZ(sample_rate, sma_b.sma), sqa_b.sma, i, input[i], GET_SAMPLE((&b), i)); */
     }
     /* set mean */
     *mean1 = sma_b.sma;
@@ -300,25 +306,26 @@ main(int argc, char *argv[])
     int sampleCount, i;
     char *inFileName;
     FILE *inFile;
+    uint32_t sample_rate;
  
     inFileName = NULL;
  
-    if ( argc == 2 )
+    if (argc == 3)
     {
-        inFileName = argv[1];
+        sample_rate = atoi(argv[1]);
+        inFileName = argv[2];
         printf("input file name = %s\n",inFileName);
     }
     else
     {
-        printf("Incorrect arguments, usage: desa filename\n");
+        printf("Incorrect arguments, usage:\n\tdesa <sample_rate filename>\n");
         return(1);
     }
  
     inFile = fopen(inFileName,"rb");
-    if ( !inFile )
+    if (inFile == NULL)
     {
         printf("Exiting.Cannot open input file %s\n",inFileName);
-        fclose( inFile );
         return(1);
     }
  
@@ -331,31 +338,31 @@ main(int argc, char *argv[])
     while( numWords == BLOCK )
     {
         intToFloat(intData, inputData, numWords);
-
+/*
         printf("\nframe = %d\n",sampleCount);
         for (i = 0; i < BLOCK; ++i)
         {
             printf("[%d]", intData[i]);
-        }
+        }*/
        /* for(i = 0; i < 5; i++){
 inputData[30 + i] = 20000.0 + i;
         }*/
         // get the frequency estimates
-        frequency = desa1( inputData, &variance );
-        printf("\nDesa1: Mean freq = %f, var = %f, std dev = %f",
-            frequency, variance, sqrt(variance));
+        frequency = desa1(inputData, &variance, sample_rate);
+        printf("\nDesa1: Mean kind-of-freq = %f, var = %f, std dev = %f, REAL_FREQ = %f\n",
+            frequency, variance, sqrt(variance), sample_rate * asin(sqrt(frequency/8.0)) / M_PI);
  
-        frequency = desa2( inputData, &variance );
-        printf("\nDesa2: Mean freq = %f, var = %f, std dev = %f\n",
-            frequency, variance, sqrt(variance));
+        frequency = desa2(inputData, &variance, sample_rate);
+        printf("Desa2: Mean kind-of-freq = %f, var = %f, std dev = %f, REAL_FREQ = %f\n",
+            frequency, variance, sqrt(variance), sample_rate * asin(sqrt(frequency/4.0)) / (2.0 * M_PI));
 
-        desa2_freeswitch_int(intData, &frequency, &freq2, &variance, &var2);
-        printf("\nDesa2_fs_int: Mean freq = %f, var = %f, std dev = %f\n, freq2 = %f, var2 = %f\n",
-            frequency, variance, sqrt(variance), freq2, var2);
+        desa2_freeswitch_int(intData, &frequency, &freq2, &variance, &var2, sample_rate);
+        printf("Desa2_fs_int: Mean kind-of-freq = %f, var = %f, std dev = %f, freq2 = %f, var2 = %f, REAL_FREQ = %f\n",
+            frequency, variance, sqrt(variance), freq2, var2, TO_HZ(sample_rate, 0.5 * (double)acos(frequency)));
 
-        desa2_freeswitch_double(inputData, &frequency, &freq2, &variance, &var2);
-        printf("\nDesa2_fs_double: Mean freq = %f, var = %f, std dev = %f\n, freq2 = %f, var2 = %f\n",
-            frequency, variance, sqrt(variance), freq2, var2);
+        desa2_freeswitch_double(inputData, &frequency, &freq2, &variance, &var2, sample_rate);
+        printf("Desa2_fs_double: Mean kind-of-freq = %f, var = %f, std dev = %f, freq2 = %f, var2 = %f, REAL_FREQ = %f\n",
+            frequency, variance, sqrt(variance), freq2, var2, TO_HZ(sample_rate, 0.5 * (double)acos(frequency)));
  
         sampleCount += BLOCK;
         numWords = fread(intData, sizeof(int16_t), BLOCK, inFile );

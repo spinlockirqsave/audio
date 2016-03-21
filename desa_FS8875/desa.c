@@ -1,13 +1,14 @@
 /*
- * @file    main.c
- * @date    26 Feb 2016
- * @brief   Tone detection using the Teager Kaiser Energy Operator to
+ * @file    desa.c
+ * @date    21 Mar 2016
+ * @brief   FS-8875
+ *          Enable faster beep detection.
+ *          DESA implementations tweaked for speed.
+ *          Tone detection using the Teager Kaiser Energy Operator to
  *          measure frequency (Desa-1 and Desa-2 algorithms)
  *          (DESA = Discrete Energy Separation Algorithm).
  *
- * Copyright 2011 Shawn Stevenson
- *
- * Modifications:   Piotr Gregor <piotrek . gregor at gmail.com>
+ * @author  Piotr Gregor < piotrek.gregor at gmail.com>
  *
  */
  
@@ -25,7 +26,7 @@
  *      input       pointer to input samples
  *      variance    the variance of the frequency estimates
  *
- * Return value: frequency estimate in Hz
+ * Return value: kind-of frequency estimate in Hz
  */
 double desa1(double *input, double *variance, uint32_t sample_rate)
 {
@@ -50,7 +51,10 @@ double desa1(double *input, double *variance, uint32_t sample_rate)
         num = diff2 * diff2 - diff1 * diff3
             + diff1 * diff1 - diff0 * diff2;
         den = x2 * x2 - x1 * x3;
-        freq[i] = sample_rate * asin(sqrt(num/(8.0 * den))) / M_PI;
+        /* instead of
+         * freq[i] = sample_rate * asin(sqrt(num/(8.0 * den))) / M_PI;
+         * we store only kind of OMEGA */
+        freq[i] = num/den;
         // handle errors - division by zero, square root of
         // negative number or asin of number > 1 or < -1
         if (isnan(freq[i]))
@@ -96,7 +100,7 @@ double desa1(double *input, double *variance, uint32_t sample_rate)
  *      input       pointer to input samples
  *      variance    the variance of the frequency estimates
  *
- * Return value: frequency estimate in Hz
+ * Return value: kind-of frequency estimate in Hz
  */
 double desa2(double *input, double *variance, uint32_t sample_rate)
 {
@@ -119,8 +123,11 @@ double desa2(double *input, double *variance, uint32_t sample_rate)
         diff0 = input[i] - x2;
         num = diff1 * diff1 - diff0 * diff2;
         den = x2 * x2 - x1 * x3;
-        freq[i] = sample_rate * asin(sqrt(num/(4.0 * den)))
-            / (2.0 * M_PI);
+        /* instead of
+         * freq[i] = sample_rate * asin(sqrt(num/(4.0 * den)))
+         * / (2.0 * M_PI);
+         * we store only kind of OMEGA */
+        freq[i] = num/den;
         // handle errors - division by zero, square root of
         // negative number or asin of number > 1 or < -1
         if (isnan(freq[i]))
@@ -172,7 +179,7 @@ int main( int argc, char *argv[] )
 {
     int16_t intData[BLOCK];
     double inputData[BLOCK];
-    double frequency;
+    double kind_of_frequency;
     double variance;
     int numWords;
     int sampleCount, i;
@@ -211,20 +218,20 @@ int main( int argc, char *argv[] )
     while(numWords == BLOCK)
     {
         intToFloat( intData, inputData, numWords );
-        printf("\nsample = %d\n",sampleCount);
+/*        printf("\nsample = %d\n",sampleCount);
         for (i = 0; i < BLOCK; ++i)
         {
             printf("[%d]", intData[i]);
         }
- 
+ */
         // get the frequency estimates
-        frequency = desa1(inputData, &variance, sample_rate);
-        printf("\nDesa1: Mean freq = %f, var = %f, std dev = %f",
-            frequency, variance, sqrt(variance));
+        kind_of_frequency = desa1(inputData, &variance, sample_rate);
+        printf("\nDesa1: Mean kind-of-freq = %f, var = %f, std dev = %f\n",
+            kind_of_frequency, variance, sqrt(variance));
  
-        frequency = desa2(inputData, &variance, sample_rate);
-        printf("\nDesa2: Mean freq = %f, var = %f, std dev = %f\n",
-            frequency, variance, sqrt(variance));
+        kind_of_frequency = desa2(inputData, &variance, sample_rate);
+        printf("Desa2: Mean kind-of-freq = %f, var = %f, std dev = %f\n",
+            kind_of_frequency, variance, sqrt(variance));
 
         sampleCount += BLOCK;
         numWords = fread(intData, sizeof(int16_t), BLOCK, inFile );

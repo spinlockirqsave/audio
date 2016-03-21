@@ -1,13 +1,13 @@
 CXX			= gcc
 LDFLAGS		= -pthread -lm
-SOURCES		= desa3_fs.c desa2_fs.c buffer.c
+SOURCES		= desa.c
 INCLUDES	= -I.
 OBJECTS		= $(SOURCES:.c=.o)
-TARGET		= desa3_fs
+TARGET		= desa
 
 all: $(SOURCES) $(TARGET)
 
-debug:	CXXFLAGS += -DDEBUG -E -g3 -O0 -Wall -D_GNU_SOURCE -std=gnu99 -pthread
+debug:	CXXFLAGS += -DDEBUG -g3 -O0 -Wall -D_GNU_SOURCE -std=gnu99 -pthread
 debug:	$(SOURCES) $(TARGET)
 
 release:	CXXFLAGS += -O3 -Wall -D_GNU_SOURCE -std=gnu99 -pthread
