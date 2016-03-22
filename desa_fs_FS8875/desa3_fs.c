@@ -242,8 +242,8 @@ desa2_freeswitch_double(double *input, double *mean1, double *mean2, double *var
     double freq[BLOCK]; // frequency estimates
 
     INIT_CIRC_BUFFER(&b, BLOCK);
-	INIT_SMA_BUFFER(&sma_b, 160);
-	INIT_SMA_BUFFER(&sqa_b, 160);
+	INIT_SMA_BUFFER(&sma_b, 40);
+	INIT_SMA_BUFFER(&sqa_b, 40);
 
 	INSERT_DOUBLE_FRAME(&b, input, BLOCK);
 
@@ -256,6 +256,8 @@ desa2_freeswitch_double(double *input, double *mean1, double *mean2, double *var
 	*var1 = sqa_b.sma - (sma_b.sma * sma_b.sma);
 /*	printf("<<< AVMD v[%f] f[%f][%f]Hz sma[%f][%f]Hz sqa[%f]\tsample[%d]\t[%f][%f]>>>\n",
             *var1, freq[i], TO_HZ(sample_rate, freq[i]), sma_b.sma, TO_HZ(sample_rate, sma_b.sma), sqa_b.sma, i, input[i], GET_SAMPLE((&b), i)); */
+        printf("----Desa2_fs_double: Mean kind-of-freq = %f, var = %f, REAL_FREQ = %f\n",
+            freq[i], *var1, TO_HZ(sample_rate, 0.5 * (double)acos(freq[i])));
     }
     /* set mean */
     *mean1 = sma_b.sma;
