@@ -47,7 +47,7 @@ desa2_fs_tweaked(circ_buffer_t *b, size_t i)
 #else
     result = 0.5 * acos(n/d);
 #endif
- we do simplified, modifeod for speed version : */
+ we do simplified, modified for speed version : */
     result = n/d;
 
     if (isnan(result))

@@ -206,6 +206,8 @@ desa2_freeswitch_int(int16_t *input, double *mean1, double *mean2, double *var1,
 	*var1 = sqa_b.sma - (sma_b.sma * sma_b.sma);
 /*	printf("<<< AVMD v[%f] f[%f][%f]Hz sma[%f][%f]Hz sqa[%f]\tsample[%d]\t[%d] >>>\n",
             *var1, freq[i], TO_HZ(sample_rate, freq[i]), sma_b.sma, TO_HZ(sample_rate, sma_b.sma), sqa_b.sma, i, input[i]); */
+        printf("----Desa2_fs_int: Mean kind-of-freq = %f, var = %f, REAL_FREQ = %f\t\tsample[%f]\n",
+            freq[i], *var1, TO_HZ(sample_rate, 0.5 * (double)acos(freq[i])), input[i]);
     }
     /* set mean */
     *mean1 = sma_b.sma;
@@ -256,8 +258,8 @@ desa2_freeswitch_double(double *input, double *mean1, double *mean2, double *var
 	*var1 = sqa_b.sma - (sma_b.sma * sma_b.sma);
 /*	printf("<<< AVMD v[%f] f[%f][%f]Hz sma[%f][%f]Hz sqa[%f]\tsample[%d]\t[%f][%f]>>>\n",
             *var1, freq[i], TO_HZ(sample_rate, freq[i]), sma_b.sma, TO_HZ(sample_rate, sma_b.sma), sqa_b.sma, i, input[i], GET_SAMPLE((&b), i)); */
-        printf("----Desa2_fs_double: Mean kind-of-freq = %f, var = %f, REAL_FREQ = %f\n",
-            freq[i], *var1, TO_HZ(sample_rate, 0.5 * (double)acos(freq[i])));
+        printf("----Desa2_fs_double: Mean kind-of-freq = %f, var = %f, REAL_FREQ = %f\t\tsample[%f]\n",
+            freq[i], *var1, TO_HZ(sample_rate, 0.5 * (double)acos(freq[i])), input[i]);
     }
     /* set mean */
     *mean1 = sma_b.sma;
@@ -293,7 +295,12 @@ intToFloat(int16_t *input, double *output, int length)
     int i;
  
     for (i = 0; i < length; i++) {
-        output[i] = (double)input[i];
+        /* samples can be divided by any values and results
+         * will stay the same because our DESA estimator
+         * divides differences of TKEO values, so A(mplitude)
+         * is left out from the equation. What matters is
+         * only the ratio of samples value */
+        output[i] = (double)input[i] / ((double) 1.0);
     }
 }
  

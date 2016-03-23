@@ -171,7 +171,12 @@ void intToFloat( int16_t *input, double *output, int length )
     int i;
  
     for ( i = 0; i < length; i++ ) {
-        output[i] = (double)input[i];
+        /* samples can be divided by any values and results
+         * will stay the same because our DESA estimator
+         * divides differences of TKEO values, so A(mplitude)
+         * is left out from the equation. What matters is
+         * only the ratio of samples value */
+        output[i] = (double)input[i] / ((double) 1.0);
     }
 }
  
