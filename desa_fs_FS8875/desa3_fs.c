@@ -316,6 +316,7 @@ main(int argc, char *argv[])
     char *inFileName;
     FILE *inFile;
     uint32_t sample_rate;
+    int frame_n;
  
     inFileName = NULL;
  
@@ -344,8 +345,11 @@ main(int argc, char *argv[])
     numWords = fread(intData, sizeof(int16_t), BLOCK, inFile );
  
     // until end of file
+    frame_n == 0;
     while( numWords == BLOCK )
     {
+        ++frame_n;
+        printf("FRAME [%d]\n", frame_n);
         intToFloat(intData, inputData, numWords);
 /*
         printf("\nframe = %d\n",sampleCount);
@@ -369,10 +373,10 @@ inputData[30 + i] = 20000.0 + i;
         printf("Desa2_fs_int: Mean kind-of-freq = %f, var = %f, std dev = %f, freq2 = %f, var2 = %f, REAL_FREQ = %f\n",
             frequency, variance, sqrt(variance), freq2, var2, TO_HZ(sample_rate, 0.5 * (double)acos(frequency)));
 
-        desa2_freeswitch_double(inputData, &frequency, &freq2, &variance, &var2, sample_rate);
+        /*desa2_freeswitch_double(inputData, &frequency, &freq2, &variance, &var2, sample_rate);
         printf("Desa2_fs_double: Mean kind-of-freq = %f, var = %f, std dev = %f, freq2 = %f, var2 = %f, REAL_FREQ = %f\n",
             frequency, variance, sqrt(variance), freq2, var2, TO_HZ(sample_rate, 0.5 * (double)acos(frequency)));
- 
+ */
         sampleCount += BLOCK;
         numWords = fread(intData, sizeof(int16_t), BLOCK, inFile );
     }
