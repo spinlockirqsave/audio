@@ -19,7 +19,11 @@
  
 #define BLOCK       160         /* samples processed in each invocation */
 #define TO_HZ(r, f) (((r) * (f)) / (2.0 * M_PI))
- 
+
+#define DESA_MAX(a, b) (a) > (b) ? (a) : (b)
+#define MEDIAN_FILTER(a, b, c) (a) > (b) ? ((a) > (c) ? \
+        DESA_MAX((b), (c)) : a) : ((b) > (c) ? DESA_MAX((a), (c)) : (b))
+
 /*
  * Purpose: detect a tone using DESA-1 algorithm
  *
@@ -307,7 +311,7 @@ intToFloat(int16_t *input, double *output, int length)
 int
 main(int argc, char *argv[])
 {
-    int16_t intData[BLOCK];
+    int16_t intData[BLOCK], intData2[BLOCK];
     double inputData[BLOCK];
     double frequency, freq2;
     double variance, var2;
@@ -343,20 +347,24 @@ main(int argc, char *argv[])
     sampleCount = 0;
  
     numWords = fread(intData, sizeof(int16_t), BLOCK, inFile );
- 
+
     // until end of file
     frame_n == 0;
     while( numWords == BLOCK )
     {
+        /* remove some noise */
+        for (i = 1; i < BLOCK - 1; ++i)
+        {
+            intData2[i] = MEDIAN_FILTER(intData[i - 1], intData[i], intData[i + 1]);
+        }
+        intData2[0] = intData[0];
+
         ++frame_n;
         printf("FRAME [%d]\n", frame_n);
         intToFloat(intData, inputData, numWords);
-/*
-        printf("\nframe = %d\n",sampleCount);
-        for (i = 0; i < BLOCK; ++i)
-        {
-            printf("[%d]", intData[i]);
-        }*/
+
+        /* printf("\nframe = %d\n",sampleCount); */
+
        /* for(i = 0; i < 5; i++){
 inputData[30 + i] = 20000.0 + i;
         }*/
