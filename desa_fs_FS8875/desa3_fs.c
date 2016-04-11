@@ -212,7 +212,7 @@ desa2_freeswitch_int(int16_t *input, double *mean1, double *mean2, double *var1,
             *var1, freq[i], TO_HZ(sample_rate, freq[i]), sma_b.sma, TO_HZ(sample_rate, sma_b.sma), sqa_b.sma, i, input[i]); */
         if (print == 1)
             printf("----Desa2_fs_int: Mean kind-of-freq = %f, var = %f, REAL_FREQ = %f\t\tsample[%f]\n",
-            freq[i], *var1, TO_HZ(sample_rate, 0.5 * (double)acos(freq[i])), input[i]);
+            freq[i], *var1, TO_HZ(sample_rate, (double)acos(sqrt(freq[i])/4.0)), input[i]);
     }
     /* set mean */
     *mean1 = sma_b.sma;
@@ -384,7 +384,7 @@ main(int argc, char *argv[])
 
         desa2_freeswitch_int(intData, &frequency, &freq2, &variance, &var2, sample_rate, frame_n);
         printf("Desa2_fs_int: Mean kind-of-freq = %f, var = %f, std dev = %f, freq2 = %f, var2 = %f, REAL_FREQ = %f\n",
-            frequency, variance, sqrt(variance), freq2, var2, TO_HZ(sample_rate, 0.5 * (double)acos(frequency)));
+            frequency, variance, sqrt(variance), freq2, var2, TO_HZ(sample_rate, (double)asin(sqrt(frequency/4.0))));
 
         /*desa2_freeswitch_double(inputData, &frequency, &freq2, &variance, &var2, sample_rate);
         printf("Desa2_fs_double: Mean kind-of-freq = %f, var = %f, std dev = %f, freq2 = %f, var2 = %f, REAL_FREQ = %f\n",
