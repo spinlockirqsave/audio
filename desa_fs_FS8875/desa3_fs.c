@@ -127,7 +127,7 @@ desa2(double *input, double *variance, uint32_t sample_rate)
     // calculate the frequency estimate for each sample
     for (i = 0; i < BLOCK; i++)
     {
-        diff0 = input[i] - x2;
+        diff0 = input[i] - x2;  /* three sample derivative */
         num = diff1 * diff1 - diff0 * diff2;
         den = x2 * x2 - x1 * x3;
         /* instead of
@@ -210,9 +210,9 @@ desa2_freeswitch_int(int16_t *input, double *mean1, double *mean2, double *var1,
 	*var1 = sqa_b.sma - (sma_b.sma * sma_b.sma);
 /*	printf("<<< AVMD v[%f] f[%f][%f]Hz sma[%f][%f]Hz sqa[%f]\tsample[%d]\t[%d] >>>\n",
             *var1, freq[i], TO_HZ(sample_rate, freq[i]), sma_b.sma, TO_HZ(sample_rate, sma_b.sma), sqa_b.sma, i, input[i]); */
-        if (print == 1)
+        if (print != 0)
             printf("----Desa2_fs_int: Mean kind-of-freq = %f, var = %f, REAL_FREQ = %f\t\tsample[%f]\n",
-            freq[i], *var1, TO_HZ(sample_rate, (double)acos(sqrt(freq[i])/4.0)), input[i]);
+            freq[i], *var1, TO_HZ(sample_rate, 0.5 * acos(freq[i])), input[i]);
     }
     /* set mean */
     *mean1 = sma_b.sma;
@@ -264,7 +264,7 @@ desa2_freeswitch_double(double *input, double *mean1, double *mean2, double *var
 /*	printf("<<< AVMD v[%f] f[%f][%f]Hz sma[%f][%f]Hz sqa[%f]\tsample[%d]\t[%f][%f]>>>\n",
             *var1, freq[i], TO_HZ(sample_rate, freq[i]), sma_b.sma, TO_HZ(sample_rate, sma_b.sma), sqa_b.sma, i, input[i], GET_SAMPLE((&b), i)); */
         printf("----Desa2_fs_double: Mean kind-of-freq = %f, var = %f, REAL_FREQ = %f\t\tsample[%f]\n",
-            freq[i], *var1, TO_HZ(sample_rate, 0.5 * (double)acos(freq[i])), input[i]);
+            freq[i], *var1, TO_HZ(sample_rate, 0.5 * acos(freq[i])), input[i]);
     }
     /* set mean */
     *mean1 = sma_b.sma;
@@ -384,7 +384,7 @@ main(int argc, char *argv[])
 
         desa2_freeswitch_int(intData, &frequency, &freq2, &variance, &var2, sample_rate, frame_n);
         printf("Desa2_fs_int: Mean kind-of-freq = %f, var = %f, std dev = %f, freq2 = %f, var2 = %f, REAL_FREQ = %f\n",
-            frequency, variance, sqrt(variance), freq2, var2, TO_HZ(sample_rate, (double)asin(sqrt(frequency/4.0))));
+            frequency, variance, sqrt(variance), freq2, var2, TO_HZ(sample_rate, 0.5 * acos(frequency)));
 
         /*desa2_freeswitch_double(inputData, &frequency, &freq2, &variance, &var2, sample_rate);
         printf("Desa2_fs_double: Mean kind-of-freq = %f, var = %f, std dev = %f, freq2 = %f, var2 = %f, REAL_FREQ = %f\n",
