@@ -40,6 +40,7 @@ desa2_fs(circ_buffer_t *b, size_t i)
     if (d == 0.0) return 0.0;
 
     n = ((x2sq) - (x0 * x4)) - ((x1 * x1) - (x0 * x2)) - ((x3 * x3) - (x2 * x4));
+    /*n = ((x2sq) - (x1 * x3)) - ((x1 * x1) - (x0 * x2)) + (x1 * x2) - (x0 * x3);*/
 
 
 #ifdef FASTMATH
