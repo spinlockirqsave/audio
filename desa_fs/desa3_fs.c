@@ -338,10 +338,10 @@ main(int argc, char *argv[])
         intToFloat(intData, inputData, numWords);
 
         printf("\nframe = %d\n",sampleCount);
-        for (i = 0; i < BLOCK; ++i)
+        /*for (i = 0; i < BLOCK; ++i)
         {
             printf("[%d]", intData[i]);
-        }
+        }*/
        /* for(i = 0; i < 5; i++){
 inputData[30 + i] = 20000.0 + i;
         }*/
