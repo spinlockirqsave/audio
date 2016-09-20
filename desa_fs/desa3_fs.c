@@ -19,6 +19,7 @@
  
 #define BLOCK       160         /* samples processed in each invocation */
 #define SAMPLE_RATE 8000.0      /* sample rate of input signal */
+#define TO_HZ(r, f) (((r) * (f)) / (2.0 * M_PI))
  
 /*
  * Purpose: detect a tone using DESA-1 algorithm
@@ -40,12 +41,16 @@ desa1(double *input, double *variance)
     static double x1 = 0.0;     // delayed inputs
     static double x2 = 0.0;
     static double x3 = 0.0;
+	sma_buffer_t    sma_b;
+	sma_buffer_t    sqa_b;
  
     double num; // numerator
     double den; // denominator
     double freq[BLOCK]; // frequency estimates
     int i;
  
+	INIT_SMA_BUFFER(&sma_b, 10);
+	INIT_SMA_BUFFER(&sqa_b, 10);
     // calculate the frequency estimate for each sample
     for ( i = 0; i < BLOCK; i++ )
     {
@@ -54,6 +59,8 @@ desa1(double *input, double *variance)
             + diff1 * diff1 - diff0 * diff2;
         den = x2 * x2 - x1 * x3;
         freq[i] = SAMPLE_RATE * asin(sqrt(num/(8.0 * den))) / M_PI;
+        APPEND_SMA_VAL(&sma_b, freq[i]);
+        APPEND_SMA_VAL(&sqa_b, freq[i] * freq[i]);
         // handle errors - division by zero, square root of
         // negative number or asin of number > 1 or < -1
         if (isnan(freq[i]))
@@ -70,6 +77,9 @@ desa1(double *input, double *variance)
         x3 = x2;
         x2 = x1;
         x1 = input[i];
+	printf("<<< AVMD f[%f]Hz\tsample[%d]\t[%f] >>>\n", freq[i], i, input[i]);
+	printf("<<< AVMD v[%f] f[%f]Hz sma[%f]Hz sqa[%f]\tsample[%d]\t[%d] >>>\n",
+            sqa_b.sma - (sma_b.sma * sma_b.sma), freq[i], sma_b.sma, sqa_b.sma, i, input[i]);
     }
  
     // calculate mean frequency
