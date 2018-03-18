@@ -3,7 +3,7 @@ LDFLAGS		= -pthread -lm
 SOURCES		= main.c
 INCLUDES	= -I.
 OBJECTS		= $(SOURCES:.c=.o)
-TARGET		= alaw2linear
+TARGET		= g7112lin
 
 all: $(SOURCES) $(TARGET)
 
@@ -12,6 +12,9 @@ debug:	$(SOURCES) $(TARGET)
 
 release:	CXXFLAGS += -O3 -Wall -D_GNU_SOURCE -std=gnu99 -pthread 
 release:	$(SOURCES) $(TARGET)
+
+install:	$(SOURCES) $(TARGET)
+	sudo cp $(TARGET) /usr/local/bin
 
 $(TARGET): $(OBJECTS) 
 	$(CXX) -o $(TARGET) $(OBJECTS) $(LDFLAGS)
