@@ -1,0 +1,53 @@
+#!/bin/bash
+
+function usage {
+    echo -e "\nUsage:\n\tpcap2lin <encoding> <input pcap file> [s]\n"
+	echo -e "For A-Law encoded input use 'a', for U-Law use 'u'.\n\n"
+	echo -e "Example:\n\tpcap2lin a someAlaw.pcap\n\n"
+	echo -e "s is optional, put it at the end of command if endiannes should be swapped.\n\n"
+	echo -e "Example:\n\tpcap2lin a someAlaw.pcap s\n\n"
+}
+
+if [ "$#" -eq 0 ]; then
+	usage
+	exit 1
+fi
+
+if [ "$#" -lt 2 ]; then
+	echo -e "\nProgram takes 2 or 3 arguments.\n"
+	usage
+	exit 2
+fi
+
+# Read raw payload (need to remove RTP header)
+tshark -r $2 -T fields -e data > $2.payload.ascii.complete
+if [ "$?" -ne "0" ]; then
+	rm $2.payload.ascii.complete
+	echo -e "Tshark error.\n"
+	exit 3
+fi
+
+# Remove 12 bytes of RTP header (first 24 characters on each line)
+sed 's/^.\{,24\}//' $2.payload.ascii.complete > $2.payload.ascii.nohdr
+if [ "$?" -ne "0" ]; then
+	echo -e "Sed error.\n"
+	exit 4
+fi
+
+# A-Law ascii to binary
+xxd -r -p $2.payload.ascii.nohdr > $2.payload.bin
+if [ "$?" -ne "0" ]; then
+	echo -e "xdd error.\n"
+	exit 5
+fi
+
+# Use g7112lin to cobvert A-Law to linear
+if [ "$#" -eq 2 ]; then
+	g7112lin $1 $2.payload.bin $2.payload.lin
+else
+	g7112lin $1 $2.payload.bin $2.payload.lin s
+fi
+if [ "$?" -ne "0" ]; then
+	echo -e "g7112lin error.\n"
+	exit 6
+fi
