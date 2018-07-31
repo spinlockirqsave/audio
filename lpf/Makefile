@@ -3,7 +3,7 @@ LDFLAGS		= -pthread -lm
 SOURCES		= main.c
 INCLUDES	= -I.
 OBJECTS		= $(SOURCES:.c=.o)
-TARGET		= bpf
+TARGET		= lpf
 
 all: $(SOURCES) $(TARGET)
 
